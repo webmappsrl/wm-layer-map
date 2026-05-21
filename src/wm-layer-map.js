@@ -1,13 +1,13 @@
-import Map from 'https://cdn.jsdelivr.net/npm/ol@9/Map.js';
-import View from 'https://cdn.jsdelivr.net/npm/ol@9/View.js';
-import TileLayer from 'https://cdn.jsdelivr.net/npm/ol@9/layer/Tile.js';
-import XYZ from 'https://cdn.jsdelivr.net/npm/ol@9/source/XYZ.js';
-import { transformExtent } from 'https://cdn.jsdelivr.net/npm/ol@9/proj.js';
-import VectorTileLayer from 'https://cdn.jsdelivr.net/npm/ol@9/layer/VectorTile.js';
-import VectorTileSource from 'https://cdn.jsdelivr.net/npm/ol@9/source/VectorTile.js';
-import MVT from 'https://cdn.jsdelivr.net/npm/ol@9/format/MVT.js';
-import Style from 'https://cdn.jsdelivr.net/npm/ol@9/style/Style.js';
-import Stroke from 'https://cdn.jsdelivr.net/npm/ol@9/style/Stroke.js';
+import Map from 'https://esm.sh/ol/Map';
+import View from 'https://esm.sh/ol/View';
+import TileLayer from 'https://esm.sh/ol/layer/Tile';
+import XYZ from 'https://esm.sh/ol/source/XYZ';
+import { transformExtent } from 'https://esm.sh/ol/proj';
+import VectorTileLayer from 'https://esm.sh/ol/layer/VectorTile';
+import VectorTileSource from 'https://esm.sh/ol/source/VectorTile';
+import MVT from 'https://esm.sh/ol/format/MVT';
+import Style from 'https://esm.sh/ol/style/Style';
+import Stroke from 'https://esm.sh/ol/style/Stroke';
 
 const TEMPLATE = `
 <style>
