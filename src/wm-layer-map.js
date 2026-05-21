@@ -158,7 +158,7 @@ class WmLayerMap extends HTMLElement {
 
     const configUrl = `https://wmfe.s3.eu-central-1.amazonaws.com/${shard}/${appId}/config.json`;
     const config = await fetch(configUrl).then(r => r.json());
-    const layer = config.layers.find(l => l.id === layerId);
+    const layer = (config.MAP?.layers ?? config.layers ?? []).find(l => l.id === layerId);
     if (!layer) {
       console.error(`wm-layer-map: layer id ${layerId} not found`);
       return;
