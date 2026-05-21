@@ -12,11 +12,15 @@ import Stroke from 'https://esm.sh/ol/style/Stroke';
 
 const TEMPLATE = `
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
   :host {
     display: block;
     position: relative;
     overflow: hidden;
-    font-family: sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --wm-color-dark: #323031;
+    --wm-color-light-rgb: 255, 255, 255;
+    --wm-font-sm: 0.875rem;
   }
   #map-wrap {
     width: 100%;
@@ -29,32 +33,34 @@ const TEMPLATE = `
   }
   #webmapp-map-attribution-container {
     position: absolute;
-    bottom: 20px;
-    right: 4px;
+    bottom: 0;
+    right: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     padding: 5px 10px;
-    border-radius: 5px;
+    border-radius: 5px 0 0 0;
+    transition: bottom 500ms;
     z-index: 1;
-    background: rgba(255, 255, 255, 0.75);
-    box-shadow: -1px -1px 5px -3px #323031;
+    background: rgba(var(--wm-color-light-rgb), 0.75);
+    box-shadow: -1px -1px 5px -3px var(--wm-color-dark);
   }
   #webmapp-map-attribution-container[hidden] {
     display: none;
   }
   .webmapp-map-attribution {
     display: inline-block;
-    font-size: 12px;
-    color: #323031;
+    font-size: var(--wm-font-sm);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--wm-color-dark);
   }
   .webmapp-map-attribution-link {
-    margin-left: 6px;
-    color: #323031;
+    color: var(--wm-color-dark);
     text-decoration: none;
   }
-  .webmapp-map-attribution-link:hover {
-    text-decoration: underline;
+  .webmapp-map-attribution-link.ion-margin-start {
+    margin-left: 6px;
   }
   #panel {
     position: absolute;
@@ -325,12 +331,12 @@ class WmLayerMap extends HTMLElement {
     let html = '';
     if (tileLabel) {
       if (tileLink) {
-        html += `<a class="webmapp-map-attribution-link" href="${tileLink}" target="_blank" rel="noopener noreferrer">© ${tileLabel}</a>`;
+        html += `<a class="wm-clickable webmapp-map-attribution-link" href="${tileLink}" target="_blank" rel="noopener noreferrer">© ${tileLabel}</a>`;
       } else {
         html += `<span>© ${tileLabel}</span>`;
       }
     }
-    html += `<a class="webmapp-map-attribution-link" href="${OSM_ABOUT_URL}" target="_blank" rel="noopener noreferrer"> © OpenStreetMap</a>`;
+    html += `<a class="wm-clickable webmapp-map-attribution-link ion-margin-start" href="${OSM_ABOUT_URL}" target="_blank" rel="noopener noreferrer"> © OpenStreetMap</a>`;
     content.innerHTML = html;
   }
 
