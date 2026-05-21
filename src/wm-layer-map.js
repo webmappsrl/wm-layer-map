@@ -1,6 +1,6 @@
 import Map from 'https://esm.sh/ol/Map';
 import View from 'https://esm.sh/ol/View';
-import { defaults as defaultControls } from 'https://esm.sh/ol/control';
+import { defaults as defaultControls, FullScreen } from 'https://esm.sh/ol/control';
 import TileLayer from 'https://esm.sh/ol/layer/Tile';
 import XYZ from 'https://esm.sh/ol/source/XYZ';
 import { transformExtent } from 'https://esm.sh/ol/proj';
@@ -12,15 +12,20 @@ import Stroke from 'https://esm.sh/ol/style/Stroke';
 
 const TEMPLATE = `
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+  @import url('https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css');
   :host {
     display: block;
     position: relative;
     overflow: hidden;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
     --wm-color-dark: #323031;
+    --wm-color-light: #ffffff;
     --wm-color-light-rgb: 255, 255, 255;
     --wm-font-sm: 0.875rem;
+    --ol-background-color: #ffffff;
+    --ol-foreground-color: #323031;
+    --ol-subtle-foreground-color: #666666;
   }
   #map-wrap {
     width: 100%;
@@ -30,6 +35,81 @@ const TEMPLATE = `
   #map {
     width: 100%;
     height: 100%;
+  }
+  #map .ol-zoom {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    left: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: fit-content;
+    height: auto;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    transform: translateY(-50%);
+    z-index: 1;
+  }
+  #map .ol-zoom button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    padding: 0;
+    font-size: 28px;
+    line-height: 1;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+  }
+  #map .ol-zoom .ol-zoom-in,
+  #map .ol-zoom .ol-zoom-out {
+    border-radius: 50%;
+  }
+  #map .ol-zoom button:hover,
+  #map .ol-zoom button:focus {
+    outline: none;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
+  }
+  #map .ol-full-screen {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  #map .ol-full-screen button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 40px;
+    margin: 0;
+    padding: 0;
+    font-size: 22px;
+    font-weight: 700;
+    font-family: inherit;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+  }
+  #map .ol-full-screen button:hover,
+  #map .ol-full-screen button:focus {
+    outline: none;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
   }
   #webmapp-map-attribution-container {
     position: absolute;
@@ -241,11 +321,16 @@ class WmLayerMap extends HTMLElement {
     const extent3857 = transformExtent(layer.bbox, 'EPSG:4326', 'EPSG:3857');
 
     const mapEl = this.shadowRoot.getElementById('map');
+    const mapWrap = this.shadowRoot.getElementById('map-wrap');
     this._setupAttribution(mapConfig);
+
+    const controls = defaultControls({ attribution: false, rotate: false }).extend([
+      new FullScreen({ source: mapWrap }),
+    ]);
 
     this._map = new Map({
       target: mapEl,
-      controls: defaultControls({ attribution: false }),
+      controls,
       layers: [
         new TileLayer({
           source: new XYZ({ url: TILE_URL }),
