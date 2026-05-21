@@ -1,5 +1,6 @@
 import Map from 'https://esm.sh/ol/Map';
 import View from 'https://esm.sh/ol/View';
+import { defaults as defaultControls } from 'https://esm.sh/ol/control';
 import TileLayer from 'https://esm.sh/ol/layer/Tile';
 import XYZ from 'https://esm.sh/ol/source/XYZ';
 import { transformExtent } from 'https://esm.sh/ol/proj';
@@ -17,9 +18,43 @@ const TEMPLATE = `
     overflow: hidden;
     font-family: sans-serif;
   }
+  #map-wrap {
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
   #map {
     width: 100%;
     height: 100%;
+  }
+  #webmapp-map-attribution-container {
+    position: absolute;
+    bottom: 20px;
+    right: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 5px 10px;
+    border-radius: 5px;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.75);
+    box-shadow: -1px -1px 5px -3px #323031;
+  }
+  #webmapp-map-attribution-container[hidden] {
+    display: none;
+  }
+  .webmapp-map-attribution {
+    display: inline-block;
+    font-size: 12px;
+    color: #323031;
+  }
+  .webmapp-map-attribution-link {
+    margin-left: 6px;
+    color: #323031;
+    text-decoration: none;
+  }
+  .webmapp-map-attribution-link:hover {
+    text-decoration: underline;
   }
   #panel {
     position: absolute;
@@ -107,7 +142,12 @@ const TEMPLATE = `
     #panel { width: 100%; }
   }
 </style>
-<div id="map"></div>
+<div id="map-wrap">
+  <div id="map"></div>
+  <div id="webmapp-map-attribution-container" hidden>
+    <div class="webmapp-map-attribution" id="attribution-content"></div>
+  </div>
+</div>
 <div id="panel">
   <button id="panel-close">✕</button>
   <div id="panel-title"></div>
@@ -139,6 +179,22 @@ const TEMPLATE = `
 </div>
 `;
 
+const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
+const WEBMAPP_URL = 'https://webmapp.it/';
+const OSM_ABOUT_URL = 'https://www.openstreetmap.org/about/';
+
+function localizedLabel(label, lang = 'it') {
+  if (label == null) return '';
+  if (typeof label === 'string') return label;
+  return label[lang] ?? label.it ?? Object.values(label).find(v => typeof v === 'string') ?? '';
+}
+
+function findTileConfig(mapConfig) {
+  const tiles = mapConfig?.controls?.tiles ?? [];
+  return tiles.find(t => t.type === 'button' && (t.name === 'webmapp' || t.url === TILE_URL))
+    ?? tiles.find(t => t.type === 'button');
+}
+
 function featureBelongsToLayer(feature, layerId) {
   const raw = feature.get('layers');
   if (raw == null) return false;
@@ -169,7 +225,8 @@ class WmLayerMap extends HTMLElement {
 
     const configUrl = `https://wmfe.s3.eu-central-1.amazonaws.com/${shard}/${appId}/config.json`;
     const config = await fetch(configUrl).then(r => r.json());
-    const layer = (config.MAP?.layers ?? config.layers ?? []).find(l => l.id === layerId);
+    const mapConfig = config.MAP ?? config;
+    const layer = (mapConfig.layers ?? []).find(l => l.id === layerId);
     if (!layer) {
       console.error(`wm-layer-map: layer id ${layerId} not found`);
       return;
@@ -178,13 +235,14 @@ class WmLayerMap extends HTMLElement {
     const extent3857 = transformExtent(layer.bbox, 'EPSG:4326', 'EPSG:3857');
 
     const mapEl = this.shadowRoot.getElementById('map');
+    this._setupAttribution(mapConfig);
+
     this._map = new Map({
       target: mapEl,
+      controls: defaultControls({ attribution: false }),
       layers: [
         new TileLayer({
-          source: new XYZ({
-            url: 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png',
-          }),
+          source: new XYZ({ url: TILE_URL }),
         }),
       ],
       view: new View({
@@ -240,6 +298,40 @@ class WmLayerMap extends HTMLElement {
       });
       this._map.getTargetElement().style.cursor = hit ? 'pointer' : '';
     });
+  }
+
+  _setupAttribution(mapConfig) {
+    const container = this.shadowRoot.getElementById('webmapp-map-attribution-container');
+    const content = this.shadowRoot.getElementById('attribution-content');
+    if (!container || !content) return;
+
+    if (mapConfig?.attribution === false) {
+      container.hidden = true;
+      return;
+    }
+
+    container.hidden = false;
+
+    if (typeof mapConfig?.attribution === 'string') {
+      content.innerHTML = mapConfig.attribution;
+      return;
+    }
+
+    const tile = findTileConfig(mapConfig);
+    const tileLabel = localizedLabel(tile?.label) || 'Webmapp';
+    const isWebmappTile = !tile || tile.name === 'webmapp' || tile.url === TILE_URL;
+    const tileLink = tile?.link ?? (isWebmappTile ? WEBMAPP_URL : null);
+
+    let html = '';
+    if (tileLabel) {
+      if (tileLink) {
+        html += `<a class="webmapp-map-attribution-link" href="${tileLink}" target="_blank" rel="noopener noreferrer">© ${tileLabel}</a>`;
+      } else {
+        html += `<span>© ${tileLabel}</span>`;
+      }
+    }
+    html += `<a class="webmapp-map-attribution-link" href="${OSM_ABOUT_URL}" target="_blank" rel="noopener noreferrer"> © OpenStreetMap</a>`;
+    content.innerHTML = html;
   }
 
   _openPanel(props) {
