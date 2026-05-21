@@ -139,6 +139,17 @@ const TEMPLATE = `
 </div>
 `;
 
+function featureBelongsToLayer(feature, layerId) {
+  const raw = feature.get('layers');
+  if (raw == null) return false;
+  try {
+    const ids = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return Array.isArray(ids) && ids.includes(layerId);
+  } catch {
+    return false;
+  }
+}
+
 class WmLayerMap extends HTMLElement {
   connectedCallback() {
     this.attachShadow({ mode: 'open' });
@@ -191,6 +202,7 @@ class WmLayerMap extends HTMLElement {
     this._pbfLayer = new VectorTileLayer({
       source: pbfSource,
       style: (feature) => {
+        if (!featureBelongsToLayer(feature, layerId)) return null;
         const isSelected = feature.getProperties().id === this._selectedId;
         return new Style({
           stroke: new Stroke({
@@ -209,7 +221,7 @@ class WmLayerMap extends HTMLElement {
         layerFilter: l => l === this._pbfLayer,
       });
 
-      if (!feature) return;
+      if (!feature || !featureBelongsToLayer(feature, layerId)) return;
 
       const trackId = feature.getProperties().id;
       if (!trackId) return;
