@@ -9,7 +9,7 @@ import VectorTileSource from 'https://esm.sh/ol/source/VectorTile';
 import MVT from 'https://esm.sh/ol/format/MVT';
 import LineString from 'https://esm.sh/ol/geom/LineString';
 import Point from 'https://esm.sh/ol/geom/Point';
-import { containsCoordinate } from 'https://esm.sh/ol/extent';
+import { buffer as bufferExtent, containsCoordinate } from 'https://esm.sh/ol/extent';
 import Style from 'https://esm.sh/ol/style/Style';
 import Stroke from 'https://esm.sh/ol/style/Stroke';
 import Fill from 'https://esm.sh/ol/style/Fill';
@@ -583,6 +583,10 @@ const TEMPLATE = `
     height: 100%;
     position: relative;
   }
+  #map-wrap:fullscreen {
+    width: 100%;
+    height: 100%;
+  }
   #map {
     width: 100%;
     height: 100%;
@@ -662,6 +666,137 @@ const TEMPLATE = `
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
   }
+  #map-top-bar {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 64px;
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+  #map-top-bar > * {
+    pointer-events: auto;
+  }
+  #app-link {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 auto;
+    min-width: 0;
+    max-width: min(260px, 100%);
+    min-height: 40px;
+    padding: 6px 14px 6px 6px;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: var(--wm-color-dark);
+    text-decoration: none;
+    background-color: var(--wm-color-light);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+  }
+  #app-link-icon {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    object-fit: cover;
+  }
+  #app-link-icon[hidden] {
+    display: none;
+  }
+  .app-link-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    line-height: 1.2;
+  }
+  #app-link-label {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  #app-link-subtitle {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--ol-subtle-foreground-color, #666666);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  #app-link:hover,
+  #app-link:focus {
+    outline: none;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
+  }
+  #app-link[hidden] {
+    display: none;
+  }
+  #layer-badge {
+    position: static;
+    display: inline-flex;
+    align-items: center;
+    flex: 0 1 auto;
+    min-width: 0;
+    width: fit-content;
+    max-width: min(260px, 100%);
+    margin-left: auto;
+    min-height: 40px;
+    padding: 6px 14px;
+    box-sizing: border-box;
+    font-family: inherit;
+    color: var(--wm-color-dark);
+    background-color: var(--wm-color-light);
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+  }
+  #layer-badge-label {
+    font-size: 13px;
+    font-weight: 600;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+  }
+  #layer-badge[hidden] {
+    display: none;
+  }
+  @media (max-width: 600px) {
+    #map-top-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      right: 16px;
+    }
+    #app-link,
+    #layer-badge {
+      max-width: calc(100% - 48px);
+    }
+    #layer-badge {
+      margin-left: 0;
+    }
+    #map-top-bar:has(#app-link[hidden]) {
+      align-items: flex-end;
+    }
+    #map-top-bar:has(#app-link[hidden]) #layer-badge {
+      align-self: flex-end;
+      max-width: calc(100% - 48px);
+    }
+  }
   #webmapp-map-attribution-container {
     position: absolute;
     bottom: 0;
@@ -731,7 +866,7 @@ const TEMPLATE = `
     margin: 16px 40px 8px 0px;
     color: #111;
   }
-  .panel-section:not([hidden]) + .panel-section:not([hidden]) {
+  .panel-section.panel-section-spaced {
     margin-top: 20px;
     padding-top: 20px;
   }
@@ -991,12 +1126,23 @@ const TEMPLATE = `
   }
 </style>
 <div id="map-wrap">
+  <div id="map-top-bar">
+    <a id="app-link" hidden target="_blank" rel="noopener noreferrer">
+      <img id="app-link-icon" alt="" hidden>
+      <span class="app-link-text">
+        <span id="app-link-label"></span>
+        <span id="app-link-subtitle"></span>
+      </span>
+    </a>
+    <div id="layer-badge" hidden>
+      <span id="layer-badge-label"></span>
+    </div>
+  </div>
   <div id="map"></div>
   <div id="webmapp-map-attribution-container" hidden>
     <div class="webmapp-map-attribution" id="attribution-content"></div>
   </div>
-</div>
-<div id="panel">
+  <div id="panel">
   <button id="panel-close">✕</button>
   <div id="panel-title"></div>
   <div id="panel-slope-section" class="panel-section" hidden>
@@ -1054,22 +1200,82 @@ const TEMPLATE = `
   <div class="section-title">Descrizione</div>
   <div id="panel-description"></div>
   </div>
-</div>
-<div id="panel-lightbox" class="panel-lightbox" hidden>
-  <button type="button" id="panel-lightbox-close" aria-label="Chiudi">✕</button>
-  <button type="button" class="panel-lightbox-nav prev" hidden aria-label="Immagine precedente">
-    <svg class="wm-ion-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
-  </button>
-  <img id="panel-lightbox-img" src="" alt="">
-  <button type="button" class="panel-lightbox-nav next" hidden aria-label="Immagine successiva">
-    <svg class="wm-ion-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M268 112l144 144-144 144M392 256H100"/></svg>
-  </button>
-  <span id="panel-lightbox-counter" class="panel-lightbox-counter" hidden></span>
+  </div>
+  <div id="panel-lightbox" class="panel-lightbox" hidden>
+    <button type="button" id="panel-lightbox-close" aria-label="Chiudi">✕</button>
+    <button type="button" class="panel-lightbox-nav prev" hidden aria-label="Immagine precedente">
+      <svg class="wm-ion-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M244 400L100 256l144-144M120 256h292"/></svg>
+    </button>
+    <img id="panel-lightbox-img" src="" alt="">
+    <button type="button" class="panel-lightbox-nav next" hidden aria-label="Immagine successiva">
+      <svg class="wm-ion-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="48" d="M268 112l144 144-144 144M392 256H100"/></svg>
+    </button>
+    <span id="panel-lightbox-counter" class="panel-lightbox-counter" hidden></span>
+  </div>
 </div>
 `;
 
 const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const WEBMAPP_URL = 'https://webmapp.it/';
+
+const WEBAPP_URL_BY_SHARD = {
+  camminiditalia: (appId) => `https://${appId}.camminiditalia.webmapp.it/`,
+  geohub: (appId) => `https://${appId}.app.geohub.webmapp.it/`,
+  maphub: (appId) => `https://${appId}.maphub.it/`,
+  osm2cai: (appId) => `https://${appId}.osm2cai.cai.it/`,
+};
+
+/** Stessi origin di webmapp-app (environment.shards) usati da gulp per scaricare resources/icon.png */
+const APP_API_ORIGIN_BY_SHARD = {
+  camminiditalia: 'https://camminiditalia.maphub.it',
+  geohub: 'https://geohub.webmapp.it',
+  maphub: 'https://maphub.it',
+  osm2cai: 'https://osm2cai.cai.it',
+};
+
+function getAppIconUrl(shard, appId) {
+  const origin = APP_API_ORIGIN_BY_SHARD[shard];
+  if (!origin) return null;
+  return `${origin}/api/app/webmapp/${appId}/resources/icon.png`;
+}
+
+function getMobilePlatform() {
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return 'android';
+  if (/iPhone|iPad|iPod/i.test(ua)) return 'ios';
+  return null;
+}
+
+function getWebappUrl(shard, appId, layerId = null) {
+  const build = WEBAPP_URL_BY_SHARD[shard];
+  if (!build) return null;
+  const url = build(appId);
+  if (layerId == null || layerId === '' || Number.isNaN(Number(layerId))) return url;
+  return `${url}?layer=${layerId}`;
+}
+
+function getStoreUrl(platform, app) {
+  const url = platform === 'android' ? app?.androidStore : platform === 'ios' ? app?.iosStore : null;
+  const trimmed = typeof url === 'string' ? url.trim() : '';
+  return trimmed || null;
+}
+
+function getAppLinkUrl(shard, appId, app, layerId) {
+  const platform = getMobilePlatform();
+  const storeUrl = platform ? getStoreUrl(platform, app) : null;
+  if (storeUrl) return storeUrl;
+  return getWebappUrl(shard, appId, platform ? null : layerId);
+}
+
+function getAppLinkSubtitle(url, app) {
+  const androidStore = typeof app?.androidStore === 'string' ? app.androidStore.trim() : '';
+  const iosStore = typeof app?.iosStore === 'string' ? app.iosStore.trim() : '';
+  if (androidStore && url === androidStore) return 'Scarica su Google Play';
+  if (iosStore && url === iosStore) return 'Scarica su App Store';
+  if (/play\.google\.com/i.test(url)) return 'Scarica su Google Play';
+  if (/apps\.apple\.com/i.test(url)) return 'Scarica su App Store';
+  return 'Apri la web app';
+}
 const OSM_ABOUT_URL = 'https://www.openstreetmap.org/about/';
 const DEF_LINE_COLOR = 'red';
 const TRACK_HIGHLIGHT_COLOR = '#CA1551';
@@ -1079,6 +1285,15 @@ const TRACK_ZINDEX = 490;
 const DEF_MAP_MIN_ZOOM = 1;
 const DEF_MAP_MAX_ZOOM = 16;
 const DEF_MAP_ZOOM = 10;
+const LAYER_EXTENT_BUFFER_RATIO = 0.12;
+const LAYER_EXTRA_ZOOM_OUT_LEVELS = 1;
+
+function expandLayerExtent(extent, ratio = LAYER_EXTENT_BUFFER_RATIO) {
+  const width = extent[2] - extent[0];
+  const height = extent[3] - extent[1];
+  const pad = Math.max(width, height) * ratio;
+  return bufferExtent(extent, pad);
+}
 
 function getMapZoomConfig(mapConfig) {
   return {
@@ -1433,6 +1648,42 @@ class WmLayerMap extends HTMLElement {
     if (primary) this.style.setProperty('--wm-color-primary', primary);
   }
 
+  _setupAppLink(config, shard, appId, layerId) {
+    const app = config?.APP;
+    const name = app?.name;
+    if (!name) return;
+
+    const url = getAppLinkUrl(shard, appId, app, layerId);
+    if (!url) return;
+
+    const link = this.shadowRoot.getElementById('app-link');
+    const label = this.shadowRoot.getElementById('app-link-label');
+    const subtitle = this.shadowRoot.getElementById('app-link-subtitle');
+    const icon = this.shadowRoot.getElementById('app-link-icon');
+    label.textContent = name;
+    subtitle.textContent = getAppLinkSubtitle(url, app);
+    link.href = url;
+    const iconUrl = getAppIconUrl(shard, appId);
+    if (iconUrl) {
+      icon.onerror = () => { icon.hidden = true; };
+      icon.src = iconUrl;
+      icon.hidden = false;
+    } else {
+      icon.hidden = true;
+    }
+    link.hidden = false;
+  }
+
+  _setupLayerBadge(layer) {
+    const name = localizedLabel(layer?.title ?? layer?.name);
+    if (!name) return;
+
+    const badge = this.shadowRoot.getElementById('layer-badge');
+    const label = this.shadowRoot.getElementById('layer-badge-label');
+    label.textContent = name;
+    badge.hidden = false;
+  }
+
   async _init() {
     const shard = this.getAttribute('shard');
     const appId = this.getAttribute('app-id');
@@ -1441,6 +1692,7 @@ class WmLayerMap extends HTMLElement {
     const configUrl = `https://wmfe.s3.eu-central-1.amazonaws.com/${shard}/${appId}/config.json`;
     const config = await fetch(configUrl).then(r => r.json());
     this._applyTheme(config);
+    this._setupAppLink(config, shard, appId, layerId);
     const mapConfig = config.MAP ?? config;
     const layer = (mapConfig.layers ?? []).find(l => l.id === layerId);
     if (!layer) {
@@ -1448,7 +1700,10 @@ class WmLayerMap extends HTMLElement {
       return;
     }
 
+    this._setupLayerBadge(layer);
+
     const extent3857 = transformExtent(layer.bbox, 'EPSG:4326', 'EPSG:3857');
+    const constrainExtent3857 = expandLayerExtent(extent3857);
     const zoomConfig = getMapZoomConfig(mapConfig);
 
     const mapEl = this.shadowRoot.getElementById('map');
@@ -1485,7 +1740,7 @@ class WmLayerMap extends HTMLElement {
         minZoom: zoomConfig.minZoom,
         maxZoom: zoomConfig.maxZoom,
         zoom: zoomConfig.defZoom,
-        extent: extent3857,
+        extent: constrainExtent3857,
         constrainOnlyCenter: true,
         showFullExtent: true,
       }),
@@ -1572,7 +1827,9 @@ class WmLayerMap extends HTMLElement {
     });
     const fittedZoom = view.getZoom();
     if (fittedZoom != null) {
-      view.setMinZoom(Math.max(zoomConfig.minZoom, fittedZoom));
+      view.setMinZoom(
+        Math.max(zoomConfig.minZoom, fittedZoom - LAYER_EXTRA_ZOOM_OUT_LEVELS),
+      );
     }
 
     this._map.on('click', async (evt) => {
@@ -1660,6 +1917,16 @@ class WmLayerMap extends HTMLElement {
     this._hoverSource?.clear();
   }
 
+  _syncPanelSectionSpacing() {
+    const sections = Array.from(this.shadowRoot.querySelectorAll('#panel > .panel-section'));
+    let seenVisible = false;
+    for (const section of sections) {
+      const visible = !section.hidden;
+      section.classList.toggle('panel-section-spaced', visible && seenVisible);
+      if (visible) seenVisible = true;
+    }
+  }
+
   _openPanel(track) {
     const sr = this.shadowRoot;
     const props = track?.properties ?? track;
@@ -1677,6 +1944,7 @@ class WmLayerMap extends HTMLElement {
 
     sr.getElementById('panel-description').textContent = props.description?.it ?? '';
 
+    this._syncPanelSectionSpacing();
     sr.getElementById('panel').classList.add('open');
   }
 
@@ -1696,6 +1964,7 @@ class WmLayerMap extends HTMLElement {
       gallery.replaceChildren();
       navLeft.hidden = true;
       navRight.hidden = true;
+      this._syncPanelSectionSpacing();
       return;
     }
 
@@ -1717,6 +1986,7 @@ class WmLayerMap extends HTMLElement {
     const showNav = !single && window.matchMedia('(min-width: 601px)').matches;
     navLeft.hidden = !showNav;
     navRight.hidden = !showNav;
+    this._syncPanelSectionSpacing();
   }
 
   _scrollGallery(direction) {
