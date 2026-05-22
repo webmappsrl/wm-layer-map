@@ -618,7 +618,6 @@ const TEMPLATE = `
     font-size: 28px;
     line-height: 1;
     font-weight: 700;
-    font-family: inherit;
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
     border: none;
@@ -653,7 +652,6 @@ const TEMPLATE = `
     padding: 0;
     font-size: 22px;
     font-weight: 700;
-    font-family: inherit;
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
     border: none;
