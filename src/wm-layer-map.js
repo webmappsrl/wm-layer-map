@@ -1,25 +1,25 @@
-import Map from 'https://esm.sh/ol/Map';
-import View from 'https://esm.sh/ol/View';
-import { defaults as defaultControls, FullScreen } from 'https://esm.sh/ol/control';
-import TileLayer from 'https://esm.sh/ol/layer/Tile';
-import XYZ from 'https://esm.sh/ol/source/XYZ';
-import { transformExtent } from 'https://esm.sh/ol/proj';
-import VectorTileLayer from 'https://esm.sh/ol/layer/VectorTile';
-import VectorTileSource from 'https://esm.sh/ol/source/VectorTile';
-import MVT from 'https://esm.sh/ol/format/MVT';
-import LineString from 'https://esm.sh/ol/geom/LineString';
-import Point from 'https://esm.sh/ol/geom/Point';
-import { buffer as bufferExtent, containsCoordinate } from 'https://esm.sh/ol/extent';
-import Style from 'https://esm.sh/ol/style/Style';
-import Stroke from 'https://esm.sh/ol/style/Stroke';
-import Fill from 'https://esm.sh/ol/style/Fill';
-import Text from 'https://esm.sh/ol/style/Text';
-import RegularShape from 'https://esm.sh/ol/style/RegularShape';
-import CircleStyle from 'https://esm.sh/ol/style/Circle';
-import Feature from 'https://esm.sh/ol/Feature';
-import VectorLayer from 'https://esm.sh/ol/layer/Vector';
-import VectorSource from 'https://esm.sh/ol/source/Vector';
-import { fromLonLat } from 'https://esm.sh/ol/proj';
+import Map from 'https://esm.sh/ol@9.2.4/Map';
+import View from 'https://esm.sh/ol@9.2.4/View';
+import { defaults as defaultControls, FullScreen } from 'https://esm.sh/ol@9.2.4/control';
+import TileLayer from 'https://esm.sh/ol@9.2.4/layer/Tile';
+import XYZ from 'https://esm.sh/ol@9.2.4/source/XYZ';
+import { transformExtent } from 'https://esm.sh/ol@9.2.4/proj';
+import VectorTileLayer from 'https://esm.sh/ol@9.2.4/layer/VectorTile';
+import VectorTileSource from 'https://esm.sh/ol@9.2.4/source/VectorTile';
+import MVT from 'https://esm.sh/ol@9.2.4/format/MVT';
+import LineString from 'https://esm.sh/ol@9.2.4/geom/LineString';
+import Point from 'https://esm.sh/ol@9.2.4/geom/Point';
+import { buffer as bufferExtent, containsCoordinate } from 'https://esm.sh/ol@9.2.4/extent';
+import Style from 'https://esm.sh/ol@9.2.4/style/Style';
+import Stroke from 'https://esm.sh/ol@9.2.4/style/Stroke';
+import Fill from 'https://esm.sh/ol@9.2.4/style/Fill';
+import Text from 'https://esm.sh/ol@9.2.4/style/Text';
+import RegularShape from 'https://esm.sh/ol@9.2.4/style/RegularShape';
+import CircleStyle from 'https://esm.sh/ol@9.2.4/style/Circle';
+import Feature from 'https://esm.sh/ol@9.2.4/Feature';
+import VectorLayer from 'https://esm.sh/ol@9.2.4/layer/Vector';
+import VectorSource from 'https://esm.sh/ol@9.2.4/source/Vector';
+import { fromLonLat } from 'https://esm.sh/ol@9.2.4/proj';
 import { Chart, registerables } from 'https://esm.sh/chart.js@4.4.7';
 
 Chart.register(...registerables);
@@ -568,15 +568,23 @@ const TEMPLATE = `
     display: block;
     position: relative;
     overflow: hidden;
-    font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+    font-family: var(--wm-font-family, 'Montserrat', system-ui, -apple-system, sans-serif);
     --wm-color-dark: #323031;
     --wm-color-primary: #ca1551;
     --wm-color-light: #ffffff;
     --wm-color-light-rgb: 255, 255, 255;
     --wm-font-sm: 0.875rem;
+    --wm-font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+    --wm-panel-width: 360px;
+    --wm-control-size: 40px;
+    --wm-surface-radius: 20px;
+    --wm-surface-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
     --ol-background-color: #ffffff;
     --ol-foreground-color: #323031;
     --ol-subtle-foreground-color: #666666;
+  }
+  :host([hidden]) {
+    display: none;
   }
   #map-wrap {
     width: 100%;
@@ -618,11 +626,13 @@ const TEMPLATE = `
     font-size: 28px;
     line-height: 1;
     font-weight: 700;
+    width: var(--wm-control-size);
+    height: var(--wm-control-size);
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
     border: none;
     border-radius: 50%;
-    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--wm-surface-shadow);
   }
   #map .ol-zoom .ol-zoom-in,
   #map .ol-zoom .ol-zoom-out {
@@ -646,8 +656,8 @@ const TEMPLATE = `
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 40px;
-    width: 40px;
+    height: var(--wm-control-size);
+    width: var(--wm-control-size);
     margin: 0;
     padding: 0;
     font-size: 22px;
@@ -656,7 +666,7 @@ const TEMPLATE = `
     background-color: var(--wm-color-light);
     border: none;
     border-radius: 50%;
-    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--wm-surface-shadow);
   }
   #map .ol-full-screen button:hover,
   #map .ol-full-screen button:focus {
@@ -710,8 +720,8 @@ const TEMPLATE = `
     text-decoration: none;
     background-color: var(--wm-color-light);
     border: none;
-    border-radius: 20px;
-    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+    border-radius: var(--wm-surface-radius);
+    box-shadow: var(--wm-surface-shadow);
   }
   #app-link-icon {
     width: 28px;
@@ -802,8 +812,8 @@ const TEMPLATE = `
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
     border: none;
-    border-radius: 20px;
-    box-shadow: 0 2px 20px 0 rgba(0, 0, 0, 0.1);
+    border-radius: var(--wm-surface-radius);
+    box-shadow: var(--wm-surface-shadow);
     pointer-events: none;
   }
   #layer-badge-label {
@@ -878,9 +888,9 @@ const TEMPLATE = `
     position: absolute;
     top: 0;
     right: 0;
-    width: 360px;
+    width: var(--wm-panel-width);
     height: 100%;
-    background: #fff;
+    background: var(--wm-color-light);
     box-shadow: -2px 0 12px rgba(0,0,0,0.15);
     transform: translateX(100%);
     transition: transform 0.3s ease;
@@ -1171,29 +1181,29 @@ const TEMPLATE = `
     #panel { width: 100%; }
   }
 </style>
-<div id="map-wrap">
-  <div id="map-top-bar">
+<div id="map-wrap" part="map-wrap">
+  <div id="map-top-bar" part="top-bar">
     <div id="app-cta-group" hidden>
-      <a id="app-link" hidden target="_blank" rel="noopener noreferrer">
+      <a id="app-link" part="app-link" hidden target="_blank" rel="noopener noreferrer">
         <img id="app-link-icon" alt="" hidden>
         <span class="app-link-text">
           <span id="app-link-label"></span>
           <span id="app-link-subtitle"></span>
         </span>
       </a>
-      <div id="app-store-links" hidden role="group" aria-label="Scarica l'app dagli store"></div>
+      <div id="app-store-links" part="store-links" hidden role="group" aria-label="Scarica l'app dagli store"></div>
     </div>
-    <div id="layer-badge" hidden>
+    <div id="layer-badge" part="layer-badge" hidden>
       <span id="layer-badge-label"></span>
     </div>
   </div>
-  <div id="map"></div>
-  <div id="webmapp-map-attribution-container" hidden>
+  <div id="map" part="map"></div>
+  <div id="webmapp-map-attribution-container" part="attribution" hidden>
     <div class="webmapp-map-attribution" id="attribution-content"></div>
   </div>
-  <div id="panel">
-  <button id="panel-close">✕</button>
-  <div id="panel-title"></div>
+  <div id="panel" part="panel">
+  <button id="panel-close" part="panel-close">✕</button>
+  <div id="panel-title" part="panel-title"></div>
   <div id="panel-slope-section" class="panel-section" hidden>
     <div class="webmapp-slopechart-canvas-container">
       <canvas class="webmapp-slopechart-canvas"></canvas>
@@ -1266,6 +1276,10 @@ const TEMPLATE = `
 
 const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const WEBMAPP_URL = 'https://webmapp.it/';
+const BRAND_APP_ICON_FALLBACK_SRC = new URL(
+  '../assets/branding/default-icon-fallback.png',
+  import.meta.url,
+).href;
 const APP_STORE_BADGE_SRC = new URL(
   '../assets/store-badges/app-store-badge-en.png',
   import.meta.url,
@@ -1281,19 +1295,33 @@ const WEBAPP_URL_BY_SHARD = {
   maphub: (appId) => `https://${appId}.maphub.it/`,
   osm2cai: (appId) => `https://${appId}.osm2cai.cai.it/`,
 };
-
-/** Stessi origin di webmapp-app (environment.shards) usati da gulp per scaricare resources/icon.png */
 const APP_API_ORIGIN_BY_SHARD = {
   camminiditalia: 'https://camminiditalia.maphub.it',
   geohub: 'https://geohub.webmapp.it',
   maphub: 'https://maphub.it',
   osm2cai: 'https://osm2cai.cai.it',
 };
+const CONFIG_ATTRIBUTES = ['shard', 'app-id', 'layer-id'];
+const CTA_ATTRIBUTES = [
+  'cta-label',
+  'cta-url',
+  'app-icon-url',
+  'ios-store-url',
+  'android-store-url',
+  'hide-cta',
+];
+const OBSERVED_ATTRIBUTES = [...CONFIG_ATTRIBUTES, ...CTA_ATTRIBUTES];
 
 function getAppIconUrl(shard, appId) {
   const origin = APP_API_ORIGIN_BY_SHARD[shard];
   if (!origin) return null;
   return `${origin}/api/app/webmapp/${appId}/resources/icon.png`;
+}
+
+function getTrimmedStringValue(value) {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
 }
 
 function getMobilePlatform() {
@@ -1680,22 +1708,167 @@ function featureBelongsToLayer(feature, layerId) {
 }
 
 class WmLayerMap extends HTMLElement {
-  connectedCallback() {
+  static observedAttributes = OBSERVED_ATTRIBUTES;
+
+  constructor() {
+    super();
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.innerHTML = TEMPLATE;
-    this._init();
-    const sr = this.shadowRoot;
-    this._slopeChart = new PanelSlopeChart(sr.getElementById('panel-slope-section'));
+    this._config = null;
+    this._renderToken = 0;
+    this._galleryImages = [];
+    this._lightboxIndex = 0;
+    this._uiBound = false;
+    this._selectedId = null;
+    this._hoveredId = null;
+    this._maxTappaNumber = null;
+    this._slopeChart = new PanelSlopeChart(this.shadowRoot.getElementById('panel-slope-section'));
     this._slopeChart.setOnHover(elements => this._onSlopeChartHover(elements));
+  }
 
-    sr.getElementById('panel-close').addEventListener('click', () => {
-      sr.getElementById('panel').classList.remove('open');
-      this._closeLightbox();
-      this._slopeChart?.destroy();
-      this._clearSlopeHoverMarker();
-      this._selectedId = null;
-      if (this._pbfLayer) this._pbfLayer.changed();
-    });
+  get shard() {
+    return this.getAttribute('shard') ?? '';
+  }
+
+  set shard(value) {
+    this._setStringAttribute('shard', value);
+  }
+
+  get appId() {
+    return this.getAttribute('app-id') ?? '';
+  }
+
+  set appId(value) {
+    this._setStringAttribute('app-id', value);
+  }
+
+  get layerId() {
+    const rawValue = getTrimmedStringValue(this.getAttribute('layer-id'));
+    if (rawValue == null) return null;
+    const value = Number(rawValue);
+    return Number.isNaN(value) ? null : value;
+  }
+
+  set layerId(value) {
+    if (value == null || value === '') {
+      this.removeAttribute('layer-id');
+      return;
+    }
+    this.setAttribute('layer-id', String(value));
+  }
+
+  get ctaLabel() {
+    return getTrimmedStringValue(this.getAttribute('cta-label'));
+  }
+
+  set ctaLabel(value) {
+    this._setStringAttribute('cta-label', value);
+  }
+
+  get ctaUrl() {
+    return getTrimmedStringValue(this.getAttribute('cta-url'));
+  }
+
+  set ctaUrl(value) {
+    this._setStringAttribute('cta-url', value);
+  }
+
+  get appIconUrl() {
+    return getTrimmedStringValue(this.getAttribute('app-icon-url'));
+  }
+
+  set appIconUrl(value) {
+    this._setStringAttribute('app-icon-url', value);
+  }
+
+  get iosStoreUrl() {
+    return getTrimmedStringValue(this.getAttribute('ios-store-url'));
+  }
+
+  set iosStoreUrl(value) {
+    this._setStringAttribute('ios-store-url', value);
+  }
+
+  get androidStoreUrl() {
+    return getTrimmedStringValue(this.getAttribute('android-store-url'));
+  }
+
+  set androidStoreUrl(value) {
+    this._setStringAttribute('android-store-url', value);
+  }
+
+  get hideCta() {
+    return this.hasAttribute('hide-cta');
+  }
+
+  set hideCta(value) {
+    this.toggleAttribute('hide-cta', Boolean(value));
+  }
+
+  connectedCallback() {
+    this._bindUiEvents();
+    this._upgradeProperty('shard');
+    this._upgradeProperty('appId');
+    this._upgradeProperty('layerId');
+    this._upgradeProperty('ctaLabel');
+    this._upgradeProperty('ctaUrl');
+    this._upgradeProperty('appIconUrl');
+    this._upgradeProperty('iosStoreUrl');
+    this._upgradeProperty('androidStoreUrl');
+    this._upgradeProperty('hideCta');
+    this.refresh();
+  }
+
+  disconnectedCallback() {
+    this._slopeChart?.destroy();
+    this._teardownMap();
+  }
+
+  attributeChangedCallback(name, oldValue, newValue) {
+    if (oldValue === newValue || !this.isConnected) return;
+    if (CONFIG_ATTRIBUTES.includes(name)) {
+      this.refresh();
+      return;
+    }
+    this._renderAuxiliaryUi();
+  }
+
+  refresh() {
+    this._render();
+  }
+
+  closePanel() {
+    const panel = this.shadowRoot.getElementById('panel');
+    panel?.classList.remove('open');
+    this._closeLightbox();
+    this._slopeChart?.destroy();
+    this._clearSlopeHoverMarker();
+    this._selectedId = null;
+    if (this._pbfLayer) this._pbfLayer.changed();
+  }
+
+  _setStringAttribute(name, value) {
+    const normalized = value == null ? null : String(value);
+    if (normalized == null || normalized.trim() === '') {
+      this.removeAttribute(name);
+      return;
+    }
+    this.setAttribute(name, normalized);
+  }
+
+  _upgradeProperty(prop) {
+    if (!Object.prototype.hasOwnProperty.call(this, prop)) return;
+    const value = this[prop];
+    delete this[prop];
+    this[prop] = value;
+  }
+
+  _bindUiEvents() {
+    if (this._uiBound) return;
+    this._uiBound = true;
+    const sr = this.shadowRoot;
+
+    sr.getElementById('panel-close')?.addEventListener('click', () => this.closePanel());
     sr.querySelector('.panel-gallery-nav.left')?.addEventListener('click', () => this._scrollGallery(-1));
     sr.querySelector('.panel-gallery-nav.right')?.addEventListener('click', () => this._scrollGallery(1));
     sr.getElementById('panel-lightbox')?.addEventListener('click', (evt) => {
@@ -1718,9 +1891,111 @@ class WmLayerMap extends HTMLElement {
     });
   }
 
+  async _render() {
+    const shard = this.shard;
+    const appId = this.appId;
+    const layerId = this.layerId;
+    const renderToken = ++this._renderToken;
+
+    this._teardownMap();
+    this._resetUi();
+
+    if (!shard || !appId || layerId == null) {
+      this._handleError(
+        'config',
+        new Error('Gli attributi `shard`, `app-id` e `layer-id` sono obbligatori.'),
+        { shard, appId, layerId },
+      );
+      return;
+    }
+
+    await this._init({ renderToken, shard, appId, layerId });
+  }
+
+  _resetUi() {
+    const sr = this.shadowRoot;
+    this._config = null;
+    this._galleryImages = [];
+    this._lightboxIndex = 0;
+    this._selectedId = null;
+    this._hoveredId = null;
+    this._maxTappaNumber = null;
+    sr.getElementById('app-link-label').textContent = '';
+    sr.getElementById('app-link-subtitle').textContent = '';
+    sr.getElementById('app-link').hidden = true;
+    sr.getElementById('app-link-icon').hidden = true;
+    sr.getElementById('app-store-links').replaceChildren();
+    sr.getElementById('app-store-links').hidden = true;
+    sr.getElementById('app-cta-group').hidden = true;
+    sr.getElementById('layer-badge-label').textContent = '';
+    sr.getElementById('layer-badge').hidden = true;
+    sr.getElementById('attribution-content').replaceChildren();
+    sr.getElementById('webmapp-map-attribution-container').hidden = true;
+    sr.getElementById('panel-title').textContent = '';
+    sr.getElementById('panel-description').textContent = '';
+    sr.getElementById('detail-from').textContent = '';
+    sr.getElementById('detail-to').textContent = '';
+    sr.getElementById('detail-distance').textContent = '';
+    sr.getElementById('detail-ascent').textContent = '';
+    sr.getElementById('detail-descent').textContent = '';
+    sr.getElementById('panel-gallery').replaceChildren();
+    sr.getElementById('panel-gallery-section').hidden = true;
+    this.closePanel();
+  }
+
+  _teardownMap() {
+    this._hoverSource?.clear();
+    this._hoverSource = null;
+    this._hoverLayer = null;
+    this._pbfLayer = null;
+    if (this._map) {
+      this._map.setTarget(null);
+      this._map = null;
+    }
+  }
+
+  _getLocale() {
+    const hostLang = getTrimmedStringValue(this.getAttribute('lang'));
+    if (hostLang) return hostLang;
+    const documentLang = getTrimmedStringValue(document.documentElement.lang);
+    return documentLang ?? 'it';
+  }
+
+  _emitComponentEvent(name, detail) {
+    this.dispatchEvent(new CustomEvent(name, {
+      detail,
+      bubbles: true,
+      composed: true,
+    }));
+  }
+
+  _handleError(stage, error, extra = {}) {
+    const normalizedError = error instanceof Error ? error : new Error(String(error));
+    console.error(`wm-layer-map: ${stage}`, normalizedError);
+    this._emitComponentEvent('error', {
+      stage,
+      message: normalizedError.message,
+      error: normalizedError,
+      ...extra,
+    });
+  }
+
+  _renderAuxiliaryUi() {
+    if (!this._config) {
+      this._updateAppCtaGroupVisibility();
+      return;
+    }
+    this._setupAppLink(this._config, this.shard, this.appId, this.layerId);
+    this._setupStoreBadges(this._config);
+  }
+
   _applyTheme(config) {
     const primary = getThemePrimaryColor(config);
-    if (primary) this.style.setProperty('--wm-color-primary', primary);
+    if (primary) {
+      this.style.setProperty('--wm-color-primary', primary);
+      return;
+    }
+    this.style.removeProperty('--wm-color-primary');
   }
 
   _updateAppCtaGroupVisibility() {
@@ -1732,16 +2007,24 @@ class WmLayerMap extends HTMLElement {
   }
 
   _setupAppLink(config, shard, appId, layerId) {
-    const app = config?.APP;
     const link = this.shadowRoot.getElementById('app-link');
     const label = this.shadowRoot.getElementById('app-link-label');
     const subtitle = this.shadowRoot.getElementById('app-link-subtitle');
     const icon = this.shadowRoot.getElementById('app-link-icon');
-    const name = localizedLabel(app?.name);
-    const url = getWebappUrl(shard, appId, layerId);
+    const name = this.ctaLabel ?? localizedLabel(config?.APP?.name, this._getLocale()) ?? 'Webmapp';
+    const url = this.ctaUrl ?? getWebappUrl(shard, appId, layerId);
+    const iconUrl = this.appIconUrl ?? getAppIconUrl(shard, appId);
+
+    if (this.hideCta) {
+      link.hidden = true;
+      icon.hidden = true;
+      this._updateAppCtaGroupVisibility();
+      return;
+    }
 
     if (!name || !url) {
       link.hidden = true;
+      icon.hidden = true;
       this._updateAppCtaGroupVisibility();
       return;
     }
@@ -1753,24 +2036,43 @@ class WmLayerMap extends HTMLElement {
     link.title = getAppLinkAriaLabel(name);
     icon.alt = '';
     icon.setAttribute('aria-hidden', 'true');
-    const iconUrl = getAppIconUrl(shard, appId);
-    if (iconUrl) {
-      icon.onerror = () => { icon.hidden = true; };
+    if (!iconUrl) {
+      icon.hidden = true;
+      icon.removeAttribute('src');
+    } else {
+      icon.dataset.fallbackApplied = 'false';
+      icon.onerror = () => {
+        if (icon.dataset.fallbackApplied !== 'true') {
+          icon.dataset.fallbackApplied = 'true';
+          icon.src = BRAND_APP_ICON_FALLBACK_SRC;
+          return;
+        }
+        icon.hidden = true;
+      };
       icon.src = iconUrl;
       icon.hidden = false;
-    } else {
-      icon.hidden = true;
     }
     link.hidden = false;
     this._updateAppCtaGroupVisibility();
   }
 
   _setupStoreBadges(config) {
-    const app = config?.APP;
+    const app = {
+      ...config?.APP,
+      iosStore: this.iosStoreUrl ?? config?.APP?.iosStore,
+      androidStore: this.androidStoreUrl ?? config?.APP?.androidStore,
+    };
     const container = this.shadowRoot.getElementById('app-store-links');
     if (!container) return;
 
-    const appName = localizedLabel(app?.name) || "l'app";
+    if (this.hideCta) {
+      container.replaceChildren();
+      container.hidden = true;
+      this._updateAppCtaGroupVisibility();
+      return;
+    }
+
+    const appName = this.ctaLabel ?? localizedLabel(app?.name, this._getLocale()) ?? "l'app";
     const badges = getStoreBadges(app, appName);
 
     if (!badges.length) {
@@ -1818,29 +2120,50 @@ class WmLayerMap extends HTMLElement {
   }
 
   _setupLayerBadge(layer) {
-    const name = localizedLabel(layer?.title ?? layer?.name);
-    if (!name) return;
-
     const badge = this.shadowRoot.getElementById('layer-badge');
     const label = this.shadowRoot.getElementById('layer-badge-label');
+    const name = localizedLabel(layer?.title ?? layer?.name, this._getLocale());
+    if (!name) {
+      badge.hidden = true;
+      label.textContent = '';
+      return;
+    }
+
     label.textContent = name;
     badge.hidden = false;
   }
 
-  async _init() {
-    const shard = this.getAttribute('shard');
-    const appId = this.getAttribute('app-id');
-    const layerId = Number(this.getAttribute('layer-id'));
-
+  async _init({ renderToken, shard, appId, layerId }) {
     const configUrl = `https://wmfe.s3.eu-central-1.amazonaws.com/${shard}/${appId}/config.json`;
-    const config = await fetch(configUrl).then(r => r.json());
+    let configResponse;
+    try {
+      configResponse = await fetch(configUrl);
+    } catch (error) {
+      this._handleError('config', error, { shard, appId, layerId, url: configUrl });
+      return;
+    }
+    if (!configResponse.ok) {
+      this._handleError(
+        'config',
+        new Error(`Impossibile caricare ${configUrl} (${configResponse.status})`),
+        { shard, appId, layerId, url: configUrl },
+      );
+      return;
+    }
+    const config = await configResponse.json();
+    if (renderToken !== this._renderToken) return;
+    this._config = config;
     this._applyTheme(config);
     this._setupAppLink(config, shard, appId, layerId);
     this._setupStoreBadges(config);
     const mapConfig = config.MAP ?? config;
     const layer = (mapConfig.layers ?? []).find(l => l.id === layerId);
     if (!layer) {
-      console.error(`wm-layer-map: layer id ${layerId} not found`);
+      this._handleError(
+        'layer',
+        new Error(`Layer id ${layerId} non trovato in ${configUrl}`),
+        { shard, appId, layerId, url: configUrl },
+      );
       return;
     }
 
@@ -1976,6 +2299,16 @@ class WmLayerMap extends HTMLElement {
       );
     }
 
+    this._emitComponentEvent('ready', {
+      shard,
+      appId,
+      layerId,
+      layer: {
+        id: layer.id,
+        name: localizedLabel(layer?.title ?? layer?.name, this._getLocale()),
+      },
+    });
+
     this._map.on('click', async (evt) => {
       const feature = this._map.forEachFeatureAtPixel(evt.pixel, f => f, {
         layerFilter: l => l === this._pbfLayer,
@@ -1990,8 +2323,30 @@ class WmLayerMap extends HTMLElement {
       this._pbfLayer.changed();
 
       const trackUrl = `https://wmfe.s3.eu-central-1.amazonaws.com/${shard}/tracks/${trackId}.json`;
-      const track = await fetch(trackUrl).then(r => r.json());
+      let trackResponse;
+      try {
+        trackResponse = await fetch(trackUrl);
+      } catch (error) {
+        this._handleError('track', error, { shard, appId, layerId, trackId, url: trackUrl });
+        return;
+      }
+      if (!trackResponse.ok) {
+        this._handleError(
+          'track',
+          new Error(`Impossibile caricare ${trackUrl} (${trackResponse.status})`),
+          { shard, appId, layerId, trackId, url: trackUrl },
+        );
+        return;
+      }
+      const track = await trackResponse.json();
       this._openPanel(track);
+      this._emitComponentEvent('track-selected', {
+        shard,
+        appId,
+        layerId,
+        trackId,
+        track,
+      });
     });
 
     this._map.on('pointermove', (evt) => {
@@ -2074,8 +2429,9 @@ class WmLayerMap extends HTMLElement {
   _openPanel(track) {
     const sr = this.shadowRoot;
     const props = track?.properties ?? track;
+    const locale = this._getLocale();
 
-    sr.getElementById('panel-title').textContent = props.name?.it ?? '';
+    sr.getElementById('panel-title').textContent = localizedLabel(props.name, locale);
     this._clearSlopeHoverMarker();
     this._slopeChart?.render(track);
     sr.getElementById('detail-from').textContent = props.from ?? '';
@@ -2086,7 +2442,7 @@ class WmLayerMap extends HTMLElement {
 
     this._renderGallery(props.image_gallery);
 
-    sr.getElementById('panel-description').textContent = props.description?.it ?? '';
+    sr.getElementById('panel-description').textContent = localizedLabel(props.description, locale);
 
     this._syncPanelSectionSpacing();
     sr.getElementById('panel').classList.add('open');
@@ -2182,4 +2538,8 @@ class WmLayerMap extends HTMLElement {
   }
 }
 
-customElements.define('wm-layer-map', WmLayerMap);
+if (!customElements.get('wm-layer-map')) {
+  customElements.define('wm-layer-map', WmLayerMap);
+}
+
+export { WmLayerMap };
