@@ -682,6 +682,18 @@ const TEMPLATE = `
   #map-top-bar > * {
     pointer-events: auto;
   }
+  #app-cta-group {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-width: 0;
+    max-width: min(320px, 100%);
+  }
+  #app-cta-group[hidden] {
+    display: none;
+  }
   #app-link {
     position: static;
     display: inline-flex;
@@ -689,8 +701,8 @@ const TEMPLATE = `
     gap: 8px;
     flex: 0 1 auto;
     min-width: 0;
-    max-width: min(260px, 100%);
-    min-height: 40px;
+    max-width: 100%;
+    min-height: 44px;
     padding: 6px 14px 6px 6px;
     box-sizing: border-box;
     font-family: inherit;
@@ -740,8 +752,39 @@ const TEMPLATE = `
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
   }
+  #app-link:focus-visible {
+    outline: 3px solid rgba(50, 48, 49, 0.35);
+    outline-offset: 3px;
+  }
   #app-link[hidden] {
     display: none;
+  }
+  #app-store-links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+  }
+  #app-store-links[hidden] {
+    display: none;
+  }
+  .store-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    border-radius: 10px;
+    line-height: 0;
+  }
+  .store-badge-image {
+    display: block;
+    width: auto;
+    height: 40px;
+  }
+  .store-badge:focus-visible {
+    outline: 3px solid rgba(50, 48, 49, 0.35);
+    outline-offset: 3px;
   }
   #layer-badge {
     position: static;
@@ -777,22 +820,27 @@ const TEMPLATE = `
   @media (max-width: 600px) {
     #map-top-bar {
       flex-direction: column;
-      align-items: flex-start;
+      align-items: center;
       right: 16px;
     }
+    #app-cta-group,
     #app-link,
     #layer-badge {
       max-width: calc(100% - 48px);
     }
+    #app-cta-group {
+      width: 100%;
+      align-items: center;
+    }
+    #app-link,
+    #layer-badge {
+      align-self: center;
+    }
+    #app-store-links {
+      justify-content: center;
+    }
     #layer-badge {
       margin-left: 0;
-    }
-    #map-top-bar:has(#app-link[hidden]) {
-      align-items: flex-end;
-    }
-    #map-top-bar:has(#app-link[hidden]) #layer-badge {
-      align-self: flex-end;
-      max-width: calc(100% - 48px);
     }
   }
   #webmapp-map-attribution-container {
@@ -1125,13 +1173,16 @@ const TEMPLATE = `
 </style>
 <div id="map-wrap">
   <div id="map-top-bar">
-    <a id="app-link" hidden target="_blank" rel="noopener noreferrer">
-      <img id="app-link-icon" alt="" hidden>
-      <span class="app-link-text">
-        <span id="app-link-label"></span>
-        <span id="app-link-subtitle"></span>
-      </span>
-    </a>
+    <div id="app-cta-group" hidden>
+      <a id="app-link" hidden target="_blank" rel="noopener noreferrer">
+        <img id="app-link-icon" alt="" hidden>
+        <span class="app-link-text">
+          <span id="app-link-label"></span>
+          <span id="app-link-subtitle"></span>
+        </span>
+      </a>
+      <div id="app-store-links" hidden role="group" aria-label="Scarica l'app dagli store"></div>
+    </div>
     <div id="layer-badge" hidden>
       <span id="layer-badge-label"></span>
     </div>
@@ -1215,6 +1266,14 @@ const TEMPLATE = `
 
 const TILE_URL = 'https://api.webmapp.it/tiles/{z}/{x}/{y}.png';
 const WEBMAPP_URL = 'https://webmapp.it/';
+const APP_STORE_BADGE_SRC = new URL(
+  '../assets/store-badges/app-store-badge-en.png',
+  import.meta.url,
+).href;
+const GOOGLE_PLAY_BADGE_SRC = new URL(
+  '../assets/store-badges/google-play-badge-en.png',
+  import.meta.url,
+).href;
 
 const WEBAPP_URL_BY_SHARD = {
   camminiditalia: (appId) => `https://${appId}.camminiditalia.webmapp.it/`,
@@ -1258,21 +1317,39 @@ function getStoreUrl(platform, app) {
   return trimmed || null;
 }
 
-function getAppLinkUrl(shard, appId, app, layerId) {
-  const platform = getMobilePlatform();
-  const storeUrl = platform ? getStoreUrl(platform, app) : null;
-  if (storeUrl) return storeUrl;
-  return getWebappUrl(shard, appId, platform ? null : layerId);
+function getAppLinkSubtitle() {
+  return 'Apri la web app';
 }
 
-function getAppLinkSubtitle(url, app) {
-  const androidStore = typeof app?.androidStore === 'string' ? app.androidStore.trim() : '';
-  const iosStore = typeof app?.iosStore === 'string' ? app.iosStore.trim() : '';
-  if (androidStore && url === androidStore) return 'Scarica su Google Play';
-  if (iosStore && url === iosStore) return 'Scarica su App Store';
-  if (/play\.google\.com/i.test(url)) return 'Scarica su Google Play';
-  if (/apps\.apple\.com/i.test(url)) return 'Scarica su App Store';
-  return 'Apri la web app';
+function getAppLinkAriaLabel(name) {
+  return `Apri la web app ${name}`;
+}
+
+function getStoreBadges(app, appName) {
+  const platform = getMobilePlatform();
+  const badges = [];
+  const iosStore = getStoreUrl('ios', app);
+  const androidStore = getStoreUrl('android', app);
+
+  if (iosStore && (!platform || platform === 'ios')) {
+    badges.push({
+      href: iosStore,
+      src: APP_STORE_BADGE_SRC,
+      alt: 'Scarica su App Store',
+      ariaLabel: `Scarica ${appName} su App Store`,
+    });
+  }
+
+  if (androidStore && (!platform || platform === 'android')) {
+    badges.push({
+      href: androidStore,
+      src: GOOGLE_PLAY_BADGE_SRC,
+      alt: 'Scarica su Google Play',
+      ariaLabel: `Scarica ${appName} su Google Play`,
+    });
+  }
+
+  return badges;
 }
 const OSM_ABOUT_URL = 'https://www.openstreetmap.org/about/';
 const DEF_LINE_COLOR = 'red';
@@ -1646,21 +1723,36 @@ class WmLayerMap extends HTMLElement {
     if (primary) this.style.setProperty('--wm-color-primary', primary);
   }
 
+  _updateAppCtaGroupVisibility() {
+    const group = this.shadowRoot.getElementById('app-cta-group');
+    const link = this.shadowRoot.getElementById('app-link');
+    const storeLinks = this.shadowRoot.getElementById('app-store-links');
+    if (!group || !link || !storeLinks) return;
+    group.hidden = link.hidden && storeLinks.hidden;
+  }
+
   _setupAppLink(config, shard, appId, layerId) {
     const app = config?.APP;
-    const name = app?.name;
-    if (!name) return;
-
-    const url = getAppLinkUrl(shard, appId, app, layerId);
-    if (!url) return;
-
     const link = this.shadowRoot.getElementById('app-link');
     const label = this.shadowRoot.getElementById('app-link-label');
     const subtitle = this.shadowRoot.getElementById('app-link-subtitle');
     const icon = this.shadowRoot.getElementById('app-link-icon');
+    const name = localizedLabel(app?.name);
+    const url = getWebappUrl(shard, appId, layerId);
+
+    if (!name || !url) {
+      link.hidden = true;
+      this._updateAppCtaGroupVisibility();
+      return;
+    }
+
     label.textContent = name;
-    subtitle.textContent = getAppLinkSubtitle(url, app);
+    subtitle.textContent = getAppLinkSubtitle();
     link.href = url;
+    link.setAttribute('aria-label', getAppLinkAriaLabel(name));
+    link.title = getAppLinkAriaLabel(name);
+    icon.alt = '';
+    icon.setAttribute('aria-hidden', 'true');
     const iconUrl = getAppIconUrl(shard, appId);
     if (iconUrl) {
       icon.onerror = () => { icon.hidden = true; };
@@ -1670,6 +1762,59 @@ class WmLayerMap extends HTMLElement {
       icon.hidden = true;
     }
     link.hidden = false;
+    this._updateAppCtaGroupVisibility();
+  }
+
+  _setupStoreBadges(config) {
+    const app = config?.APP;
+    const container = this.shadowRoot.getElementById('app-store-links');
+    if (!container) return;
+
+    const appName = localizedLabel(app?.name) || "l'app";
+    const badges = getStoreBadges(app, appName);
+
+    if (!badges.length) {
+      container.replaceChildren();
+      container.hidden = true;
+      this._updateAppCtaGroupVisibility();
+      return;
+    }
+
+    container.replaceChildren(...badges.map((badge) => {
+      const link = document.createElement('a');
+      link.className = 'store-badge';
+      link.href = badge.href;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.setAttribute('aria-label', badge.ariaLabel);
+      link.title = badge.ariaLabel;
+
+      const img = document.createElement('img');
+      img.className = 'store-badge-image';
+      img.src = badge.src;
+      img.alt = badge.alt;
+      img.loading = 'lazy';
+      img.decoding = 'async';
+
+      img.onerror = () => {
+        if (badge.fallbackSrc && badge.fallbackSrc !== badge.src && img.dataset.fallbackApplied !== 'true') {
+          img.dataset.fallbackApplied = 'true';
+          img.src = badge.fallbackSrc;
+          return;
+        }
+        link.remove();
+        this._updateAppCtaGroupVisibility();
+      };
+
+      link.appendChild(img);
+      return link;
+    }));
+    container.setAttribute(
+      'aria-label',
+      badges.length === 1 ? 'Scarica l\'app dallo store disponibile' : 'Scarica l\'app dagli store',
+    );
+    container.hidden = false;
+    this._updateAppCtaGroupVisibility();
   }
 
   _setupLayerBadge(layer) {
@@ -1691,6 +1836,7 @@ class WmLayerMap extends HTMLElement {
     const config = await fetch(configUrl).then(r => r.json());
     this._applyTheme(config);
     this._setupAppLink(config, shard, appId, layerId);
+    this._setupStoreBadges(config);
     const mapConfig = config.MAP ?? config;
     const layer = (mapConfig.layers ?? []).find(l => l.id === layerId);
     if (!layer) {
