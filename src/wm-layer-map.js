@@ -1388,10 +1388,12 @@ const TRACK_ZINDEX = 490;
 const DEF_MAP_MIN_ZOOM = 1;
 const DEF_MAP_MAX_ZOOM = 16;
 const DEF_MAP_ZOOM = 10;
-const LAYER_EXTENT_BUFFER_RATIO = 0.12;
+const LAYER_DISCOVERY_BUFFER_RATIO = 3;
+const LAYER_FIT_BUFFER_RATIO = 0.2;
+const LAYER_CONSTRAIN_BUFFER_RATIO = 1;
 const LAYER_EXTRA_ZOOM_OUT_LEVELS = 1;
 
-function expandLayerExtent(extent, ratio = LAYER_EXTENT_BUFFER_RATIO) {
+function expandLayerExtent(extent, ratio = LAYER_FIT_BUFFER_RATIO) {
   const width = extent[2] - extent[0];
   const height = extent[3] - extent[1];
   const pad = Math.max(width, height) * ratio;
@@ -1404,6 +1406,12 @@ function getMapZoomConfig(mapConfig) {
     maxZoom: mapConfig?.maxZoom ?? DEF_MAP_MAX_ZOOM,
     defZoom: mapConfig?.defZoom ?? DEF_MAP_ZOOM,
   };
+}
+
+function shouldShowTrackRef(mapConfig, zoom) {
+  const showRef = mapConfig?.ref_on_track_show ?? true;
+  const minZoom = Number(mapConfig?.ref_on_track_min_zoom ?? 0);
+  return showRef && Number.isFinite(zoom) && zoom > minZoom;
 }
 
 function getTrackStrokeColor(layer, feature) {
@@ -1722,6 +1730,7 @@ class WmLayerMap extends HTMLElement {
     this._selectedId = null;
     this._hoveredId = null;
     this._maxTappaNumber = null;
+    this._observedLayerExtent = null;
     this._slopeChart = new PanelSlopeChart(this.shadowRoot.getElementById('panel-slope-section'));
     this._slopeChart.setOnHover(elements => this._onSlopeChartHover(elements));
   }
@@ -1920,6 +1929,7 @@ class WmLayerMap extends HTMLElement {
     this._selectedId = null;
     this._hoveredId = null;
     this._maxTappaNumber = null;
+    this._observedLayerExtent = null;
     sr.getElementById('app-link-label').textContent = '';
     sr.getElementById('app-link-subtitle').textContent = '';
     sr.getElementById('app-link').hidden = true;
@@ -1948,6 +1958,7 @@ class WmLayerMap extends HTMLElement {
     this._hoverSource = null;
     this._hoverLayer = null;
     this._pbfLayer = null;
+    this._observedLayerExtent = null;
     if (this._map) {
       this._map.setTarget(null);
       this._map = null;
@@ -1978,6 +1989,59 @@ class WmLayerMap extends HTMLElement {
       error: normalizedError,
       ...extra,
     });
+  }
+
+  _captureObservedLayerExtent(feature) {
+    const geometryExtent = feature?.getGeometry?.()?.getExtent?.();
+    if (
+      !Array.isArray(geometryExtent)
+      || geometryExtent.length !== 4
+      || geometryExtent.some(value => !Number.isFinite(value))
+    ) {
+      return;
+    }
+
+    if (!this._observedLayerExtent) {
+      this._observedLayerExtent = [...geometryExtent];
+      return;
+    }
+
+    this._observedLayerExtent[0] = Math.min(this._observedLayerExtent[0], geometryExtent[0]);
+    this._observedLayerExtent[1] = Math.min(this._observedLayerExtent[1], geometryExtent[1]);
+    this._observedLayerExtent[2] = Math.max(this._observedLayerExtent[2], geometryExtent[2]);
+    this._observedLayerExtent[3] = Math.max(this._observedLayerExtent[3], geometryExtent[3]);
+  }
+
+  _applyObservedLayerView(zoomConfig) {
+    if (!this._map || !this._observedLayerExtent) return;
+
+    const constrainedExtent = expandLayerExtent(
+      this._observedLayerExtent,
+      LAYER_CONSTRAIN_BUFFER_RATIO,
+    );
+    const fittedExtent = expandLayerExtent(this._observedLayerExtent, LAYER_FIT_BUFFER_RATIO);
+    const view = new View({
+      projection: 'EPSG:3857',
+      minZoom: zoomConfig.minZoom,
+      maxZoom: zoomConfig.maxZoom,
+      zoom: zoomConfig.defZoom,
+      extent: constrainedExtent,
+      constrainOnlyCenter: true,
+      showFullExtent: true,
+    });
+
+    this._map.setView(view);
+    view.fit(fittedExtent, {
+      padding: [40, 40, 40, 40],
+      maxZoom: zoomConfig.maxZoom,
+    });
+
+    const fittedZoom = view.getZoom();
+    if (fittedZoom != null) {
+      view.setMinZoom(
+        Math.max(zoomConfig.minZoom, fittedZoom - LAYER_EXTRA_ZOOM_OUT_LEVELS),
+      );
+    }
   }
 
   _renderAuxiliaryUi() {
@@ -2170,7 +2234,7 @@ class WmLayerMap extends HTMLElement {
     this._setupLayerBadge(layer);
 
     const extent3857 = transformExtent(layer.bbox, 'EPSG:4326', 'EPSG:3857');
-    const constrainExtent3857 = expandLayerExtent(extent3857);
+    const discoveryExtent3857 = expandLayerExtent(extent3857, LAYER_DISCOVERY_BUFFER_RATIO);
     const zoomConfig = getMapZoomConfig(mapConfig);
 
     const mapEl = this.shadowRoot.getElementById('map');
@@ -2207,9 +2271,6 @@ class WmLayerMap extends HTMLElement {
         minZoom: zoomConfig.minZoom,
         maxZoom: zoomConfig.maxZoom,
         zoom: zoomConfig.defZoom,
-        extent: constrainExtent3857,
-        constrainOnlyCenter: true,
-        showFullExtent: true,
       }),
     });
 
@@ -2226,6 +2287,7 @@ class WmLayerMap extends HTMLElement {
       source: pbfSource,
       style: (feature) => {
         if (!featureBelongsToLayer(feature, layerId)) return null;
+        this._captureObservedLayerExtent(feature);
         const props = feature.getProperties();
         const featureId = props.id;
         const isSelected = featureId === this._selectedId;
@@ -2266,7 +2328,7 @@ class WmLayerMap extends HTMLElement {
           const showEnd = shouldShowEndIcon(featureId, layer, props, this._maxTappaNumber);
           styles.push(...buildStartEndIcons(flatCoordinates, showEnd));
 
-          if (props.ref != null && props.ref !== '') {
+          if (props.ref != null && props.ref !== '' && shouldShowTrackRef(mapConfig, zoom)) {
             try {
               const lineString = getLineStringFromRenderFeature(feature);
               lineString.setProperties(props);
@@ -2288,16 +2350,14 @@ class WmLayerMap extends HTMLElement {
     this._map.addLayer(this._pbfLayer);
     this._map.addLayer(this._hoverLayer);
     const view = this._map.getView();
-    view.fit(extent3857, {
+    view.fit(discoveryExtent3857, {
       padding: [40, 40, 40, 40],
       maxZoom: zoomConfig.maxZoom,
     });
-    const fittedZoom = view.getZoom();
-    if (fittedZoom != null) {
-      view.setMinZoom(
-        Math.max(zoomConfig.minZoom, fittedZoom - LAYER_EXTRA_ZOOM_OUT_LEVELS),
-      );
-    }
+    this._map.once('rendercomplete', () => {
+      if (renderToken !== this._renderToken) return;
+      this._applyObservedLayerView(zoomConfig);
+    });
 
     this._emitComponentEvent('ready', {
       shard,
