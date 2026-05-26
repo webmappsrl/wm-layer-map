@@ -1174,6 +1174,36 @@ const TEMPLATE = `
     margin-top: 10px;
     white-space: pre-line;
   }
+  #panel-description > :first-child {
+    margin-top: 0;
+  }
+  #panel-description > :last-child {
+    margin-bottom: 0;
+  }
+  #panel-description h1,
+  #panel-description h2,
+  #panel-description h3,
+  #panel-description h4,
+  #panel-description h5,
+  #panel-description h6 {
+    font-size: inherit;
+    line-height: inherit;
+    margin: 0 0 10px;
+    font-weight: 600;
+  }
+  #panel-description p,
+  #panel-description ul,
+  #panel-description ol,
+  #panel-description blockquote {
+    margin: 0 0 10px;
+  }
+  #panel-description ul,
+  #panel-description ol {
+    padding-left: 18px;
+  }
+  #panel-description a {
+    color: inherit;
+  }
   .panel-section-description {
     padding-bottom: 24px;
   }
@@ -1688,6 +1718,64 @@ function localizedLabel(label, lang = 'it') {
   return label[lang] ?? label.it ?? Object.values(label).find(v => typeof v === 'string') ?? '';
 }
 
+function isSafeHtmlUrl(value) {
+  if (!value) return false;
+
+  const normalizedValue = value.trim();
+  if (!normalizedValue) return false;
+
+  if (/^data:/i.test(normalizedValue)) {
+    return /^data:image\//i.test(normalizedValue);
+  }
+
+  if (/^(https?:|mailto:|tel:|#|\/)/i.test(normalizedValue)) {
+    return true;
+  }
+
+  return !/^[a-zA-Z][a-zA-Z\d+\-.]*:/i.test(normalizedValue);
+}
+
+function sanitizeHtmlFragment(html) {
+  if (typeof html !== 'string' || !html) return '';
+
+  const template = document.createElement('template');
+  template.innerHTML = html;
+
+  const blockedTags = new Set(['script', 'style', 'iframe', 'object', 'embed', 'link', 'meta', 'base', 'form']);
+  const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+  const elements = [];
+
+  while (walker.nextNode()) {
+    elements.push(walker.currentNode);
+  }
+
+  for (const element of elements) {
+    const tagName = element.tagName.toLowerCase();
+    if (blockedTags.has(tagName)) {
+      element.remove();
+      continue;
+    }
+
+    for (const attribute of Array.from(element.attributes)) {
+      const attributeName = attribute.name.toLowerCase();
+      const attributeValue = attribute.value.trim();
+
+      if (attributeName.startsWith('on')) {
+        element.removeAttribute(attribute.name);
+        continue;
+      }
+
+      if ((attributeName === 'href' || attributeName === 'src' || attributeName === 'xlink:href')
+        && attributeValue
+        && !isSafeHtmlUrl(attributeValue)) {
+        element.removeAttribute(attribute.name);
+      }
+    }
+  }
+
+  return template.innerHTML;
+}
+
 function findTileConfig(mapConfig) {
   const tiles = mapConfig?.controls?.tiles ?? [];
   return tiles.find(t => t.type === 'button' && (t.name === 'webmapp' || t.url === TILE_URL))
@@ -1942,7 +2030,7 @@ class WmLayerMap extends HTMLElement {
     sr.getElementById('attribution-content').replaceChildren();
     sr.getElementById('webmapp-map-attribution-container').hidden = true;
     sr.getElementById('panel-title').textContent = '';
-    sr.getElementById('panel-description').textContent = '';
+    sr.getElementById('panel-description').replaceChildren();
     sr.getElementById('detail-from').textContent = '';
     sr.getElementById('detail-to').textContent = '';
     sr.getElementById('detail-distance').textContent = '';
@@ -2490,6 +2578,8 @@ class WmLayerMap extends HTMLElement {
     const sr = this.shadowRoot;
     const props = track?.properties ?? track;
     const locale = this._getLocale();
+    const description = localizedLabel(props.description, locale);
+    const descriptionElement = sr.getElementById('panel-description');
 
     sr.getElementById('panel-title').textContent = localizedLabel(props.name, locale);
     this._clearSlopeHoverMarker();
@@ -2502,7 +2592,7 @@ class WmLayerMap extends HTMLElement {
 
     this._renderGallery(props.image_gallery);
 
-    sr.getElementById('panel-description').textContent = localizedLabel(props.description, locale);
+    descriptionElement.innerHTML = sanitizeHtmlFragment(description);
 
     this._syncPanelSectionSpacing();
     sr.getElementById('panel').classList.add('open');
