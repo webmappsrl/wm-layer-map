@@ -1,6 +1,6 @@
 import Map from 'https://esm.sh/ol@9.2.4/Map';
 import View from 'https://esm.sh/ol@9.2.4/View';
-import { defaults as defaultControls, FullScreen } from 'https://esm.sh/ol@9.2.4/control';
+import { defaults as defaultControls, FullScreen, ScaleLine } from 'https://esm.sh/ol@9.2.4/control';
 import TileLayer from 'https://esm.sh/ol@9.2.4/layer/Tile';
 import XYZ from 'https://esm.sh/ol@9.2.4/source/XYZ';
 import { transformExtent } from 'https://esm.sh/ol@9.2.4/proj';
@@ -682,9 +682,9 @@ const TEMPLATE = `
     z-index: 2;
     display: flex;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 8px;
     pointer-events: none;
     box-sizing: border-box;
@@ -692,17 +692,18 @@ const TEMPLATE = `
   #map-top-bar > * {
     pointer-events: auto;
   }
-  #app-cta-group {
+  #map-top-bar-left,
+  #map-top-bar-right {
     display: flex;
-    flex: 1 1 auto;
-    flex-direction: column;
+    flex: 0 1 auto;
     align-items: flex-start;
-    gap: 8px;
     min-width: 0;
+  }
+  #map-top-bar-left {
     max-width: min(320px, 100%);
   }
-  #app-cta-group[hidden] {
-    display: none;
+  #map-top-bar-right {
+    max-width: min(260px, 100%);
   }
   #app-link {
     position: static;
@@ -769,12 +770,28 @@ const TEMPLATE = `
   #app-link[hidden] {
     display: none;
   }
-  #app-store-links {
+  #map-bottom-left {
+    position: absolute;
+    bottom: 0;
+    left: 16px;
+    z-index: 1;
     display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    pointer-events: none;
+  }
+  #map-bottom-left > * {
+    pointer-events: auto;
+  }
+  #app-store-links {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    min-height: 40px;
   }
   #app-store-links[hidden] {
     display: none;
@@ -790,7 +807,7 @@ const TEMPLATE = `
   .store-badge-image {
     display: block;
     width: auto;
-    height: 40px;
+    height: 32px;
   }
   .store-badge:focus-visible {
     outline: 3px solid rgba(50, 48, 49, 0.35);
@@ -803,8 +820,7 @@ const TEMPLATE = `
     flex: 0 1 auto;
     min-width: 0;
     width: fit-content;
-    max-width: min(260px, 100%);
-    margin-left: auto;
+    max-width: 100%;
     min-height: 40px;
     padding: 6px 14px;
     box-sizing: border-box;
@@ -829,29 +845,42 @@ const TEMPLATE = `
   }
   @media (max-width: 600px) {
     #map-top-bar {
-      flex-direction: column;
-      align-items: center;
-      right: 16px;
+      justify-content: space-between;
+      gap: 8px;
     }
-    #app-cta-group,
-    #app-link,
-    #layer-badge {
-      max-width: calc(100% - 48px);
+    #map-top-bar-left {
+      flex: 1 1 auto;
+      max-width: calc(50% - 4px);
     }
-    #app-cta-group {
-      width: 100%;
-      align-items: center;
-    }
-    #app-link,
-    #layer-badge {
-      align-self: center;
+    #map-top-bar-right {
+      flex: 0 1 auto;
+      max-width: calc(50% - 4px);
+      margin-left: auto;
+      justify-content: flex-end;
     }
     #app-store-links {
-      justify-content: center;
+      flex-direction: column;
+      align-items: flex-start;
     }
-    #layer-badge {
-      margin-left: 0;
-    }
+  }
+  #webmapp-map-scale-line-container {
+    position: relative;
+    width: fit-content;
+    max-width: 100%;
+    min-height: 22px;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  #webmapp-map-scale-line-container .ol-scale-line {
+    position: relative;
+    bottom: auto;
+    left: auto;
+    margin: 0;
+    display: inline-block;
+    width: fit-content;
+  }
+  #webmapp-map-scale-line-container .ol-scale-line-inner {
+    box-sizing: border-box;
   }
   #webmapp-map-attribution-container {
     position: absolute;
@@ -1213,7 +1242,7 @@ const TEMPLATE = `
 </style>
 <div id="map-wrap" part="map-wrap">
   <div id="map-top-bar" part="top-bar">
-    <div id="app-cta-group" hidden>
+    <div id="map-top-bar-left">
       <a id="app-link" part="app-link" hidden target="_blank" rel="noopener noreferrer">
         <img id="app-link-icon" alt="" hidden>
         <span class="app-link-text">
@@ -1221,13 +1250,18 @@ const TEMPLATE = `
           <span id="app-link-subtitle"></span>
         </span>
       </a>
-      <div id="app-store-links" part="store-links" hidden role="group" aria-label="Scarica l'app dagli store"></div>
     </div>
-    <div id="layer-badge" part="layer-badge" hidden>
-      <span id="layer-badge-label"></span>
+    <div id="map-top-bar-right">
+      <div id="layer-badge" part="layer-badge" hidden>
+        <span id="layer-badge-label"></span>
+      </div>
     </div>
   </div>
   <div id="map" part="map"></div>
+  <div id="map-bottom-left" part="bottom-left">
+    <div id="app-store-links" part="store-links" hidden role="group" aria-label="Scarica l'app dagli store"></div>
+    <div id="webmapp-map-scale-line-container" part="scale-line"></div>
+  </div>
   <div id="webmapp-map-attribution-container" part="attribution" hidden>
     <div class="webmapp-map-attribution" id="attribution-content"></div>
   </div>
@@ -1418,6 +1452,8 @@ const TRACK_ZINDEX = 490;
 const DEF_MAP_MIN_ZOOM = 1;
 const DEF_MAP_MAX_ZOOM = 16;
 const DEF_MAP_ZOOM = 10;
+const SCALE_UNITS = 'metric';
+const SCALE_MIN_WIDTH = 50;
 const LAYER_DISCOVERY_BUFFER_RATIO = 3;
 const LAYER_FIT_BUFFER_RATIO = 0.2;
 const LAYER_CONSTRAIN_BUFFER_RATIO = 1;
@@ -2024,7 +2060,6 @@ class WmLayerMap extends HTMLElement {
     sr.getElementById('app-link-icon').hidden = true;
     sr.getElementById('app-store-links').replaceChildren();
     sr.getElementById('app-store-links').hidden = true;
-    sr.getElementById('app-cta-group').hidden = true;
     sr.getElementById('layer-badge-label').textContent = '';
     sr.getElementById('layer-badge').hidden = true;
     sr.getElementById('attribution-content').replaceChildren();
@@ -2133,10 +2168,7 @@ class WmLayerMap extends HTMLElement {
   }
 
   _renderAuxiliaryUi() {
-    if (!this._config) {
-      this._updateAppCtaGroupVisibility();
-      return;
-    }
+    if (!this._config) return;
     this._setupAppLink(this._config, this.shard, this.appId, this.layerId);
     this._setupStoreBadges(this._config);
   }
@@ -2148,14 +2180,6 @@ class WmLayerMap extends HTMLElement {
       return;
     }
     this.style.removeProperty('--wm-color-primary');
-  }
-
-  _updateAppCtaGroupVisibility() {
-    const group = this.shadowRoot.getElementById('app-cta-group');
-    const link = this.shadowRoot.getElementById('app-link');
-    const storeLinks = this.shadowRoot.getElementById('app-store-links');
-    if (!group || !link || !storeLinks) return;
-    group.hidden = link.hidden && storeLinks.hidden;
   }
 
   _setupAppLink(config, shard, appId, layerId) {
@@ -2170,14 +2194,12 @@ class WmLayerMap extends HTMLElement {
     if (this.hideCta) {
       link.hidden = true;
       icon.hidden = true;
-      this._updateAppCtaGroupVisibility();
       return;
     }
 
     if (!name || !url) {
       link.hidden = true;
       icon.hidden = true;
-      this._updateAppCtaGroupVisibility();
       return;
     }
 
@@ -2205,7 +2227,6 @@ class WmLayerMap extends HTMLElement {
       icon.hidden = false;
     }
     link.hidden = false;
-    this._updateAppCtaGroupVisibility();
   }
 
   _setupStoreBadges(config) {
@@ -2220,7 +2241,6 @@ class WmLayerMap extends HTMLElement {
     if (this.hideCta) {
       container.replaceChildren();
       container.hidden = true;
-      this._updateAppCtaGroupVisibility();
       return;
     }
 
@@ -2230,7 +2250,6 @@ class WmLayerMap extends HTMLElement {
     if (!badges.length) {
       container.replaceChildren();
       container.hidden = true;
-      this._updateAppCtaGroupVisibility();
       return;
     }
 
@@ -2257,7 +2276,6 @@ class WmLayerMap extends HTMLElement {
           return;
         }
         link.remove();
-        this._updateAppCtaGroupVisibility();
       };
 
       link.appendChild(img);
@@ -2268,7 +2286,6 @@ class WmLayerMap extends HTMLElement {
       badges.length === 1 ? 'Scarica l\'app dallo store disponibile' : 'Scarica l\'app dagli store',
     );
     container.hidden = false;
-    this._updateAppCtaGroupVisibility();
   }
 
   _setupLayerBadge(layer) {
@@ -2327,9 +2344,15 @@ class WmLayerMap extends HTMLElement {
 
     const mapEl = this.shadowRoot.getElementById('map');
     const mapWrap = this.shadowRoot.getElementById('map-wrap');
+    const scaleLineEl = this.shadowRoot.getElementById('webmapp-map-scale-line-container');
     this._setupAttribution(mapConfig);
 
     const controls = defaultControls({ attribution: false, rotate: false }).extend([
+      new ScaleLine({
+        units: SCALE_UNITS,
+        minWidth: SCALE_MIN_WIDTH,
+        target: scaleLineEl,
+      }),
       new FullScreen({ source: mapWrap }),
     ]);
 

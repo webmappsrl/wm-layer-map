@@ -110,6 +110,8 @@ Per styling mirato di elementi interni esposti pubblicamente puoi usare `::part(
 - `app-link`
 - `store-links`
 - `layer-badge`
+- `bottom-left`
+- `scale-line`
 - `map`
 - `attribution`
 - `panel`
