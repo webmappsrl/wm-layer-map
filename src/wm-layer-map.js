@@ -703,7 +703,7 @@ const TEMPLATE = `
     max-width: min(320px, 100%);
   }
   #map-top-bar-right {
-    max-width: min(260px, 100%);
+    max-width: min(320px, 100%);
   }
   #app-link {
     position: static;
@@ -835,9 +835,11 @@ const TEMPLATE = `
   #layer-badge-label {
     font-size: 12px;
     font-weight: 600;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    overflow-wrap: anywhere;
     line-height: 1.2;
   }
   #layer-badge[hidden] {
