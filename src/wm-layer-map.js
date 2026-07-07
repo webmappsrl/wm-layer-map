@@ -709,24 +709,24 @@ const TEMPLATE = `
     position: static;
     display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     flex: 0 1 auto;
     min-width: 0;
     max-width: 100%;
-    min-height: 44px;
-    padding: 6px 14px 6px 6px;
+    min-height: 38px;
+    padding: 4px 10px 4px 4px;
     box-sizing: border-box;
     font-family: inherit;
     color: var(--wm-color-dark);
     text-decoration: none;
     background-color: var(--wm-color-light);
     border: none;
-    border-radius: var(--wm-surface-radius);
+    border-radius: 16px;
     box-shadow: var(--wm-surface-shadow);
   }
   #app-link-icon {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
     border-radius: 6px;
     object-fit: cover;
@@ -743,14 +743,14 @@ const TEMPLATE = `
     line-height: 1.2;
   }
   #app-link-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
   #app-link-subtitle {
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     color: var(--ol-subtle-foreground-color, #666666);
     overflow: hidden;
@@ -821,19 +821,19 @@ const TEMPLATE = `
     min-width: 0;
     width: fit-content;
     max-width: 100%;
-    min-height: 40px;
-    padding: 6px 14px;
+    min-height: 36px;
+    padding: 4px 10px;
     box-sizing: border-box;
     font-family: inherit;
     color: var(--wm-color-dark);
     background-color: var(--wm-color-light);
     border: none;
-    border-radius: var(--wm-surface-radius);
+    border-radius: 16px;
     box-shadow: var(--wm-surface-shadow);
     pointer-events: none;
   }
   #layer-badge-label {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     overflow: hidden;
     white-space: nowrap;
@@ -847,6 +847,10 @@ const TEMPLATE = `
     #map-top-bar {
       justify-content: space-between;
       gap: 8px;
+      right: 16px;
+    }
+    #map .ol-full-screen {
+      display: none;
     }
     #map-top-bar-left {
       flex: 1 1 auto;
